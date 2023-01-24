@@ -125,7 +125,7 @@ namespace CSharpToPlantUml {
 							foreach (var baseType in additionalTypes2) {
 								additionalTypes.Add(baseType.Key, baseType.Value);
 							}
-							prevTypes = additionalTypes;
+							prevTypes = additionalTypes2;
 						}
 					}
 					additionalTypesExpanded = additionalTypes;
@@ -153,7 +153,7 @@ namespace CSharpToPlantUml {
 							foreach (var baseType in additionalTypes2) {
 								additionalTypesExpanded.Add(baseType.Key, baseType.Value);
 							}
-							prevTypes = additionalTypes;
+							prevTypes = additionalTypes2;
 						}
 					}
 					foreach (var key in additionalTypesExpanded.Keys) {
