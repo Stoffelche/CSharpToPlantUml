@@ -35,7 +35,10 @@ public enum EDiagramDirection { Default, LeftToRight, TopToBottom }
 	public class InheritanceDiagramConfiguration : DiagramConfiguration {
 		public string BaseType;
 		public bool ExcludeSystemObject = true;
-		public EFollowBaseTypeMode FollowBaseTypeMode =	EFollowBaseTypeMode.None;
+		public EFollowBaseTypeMode FollowAnchorTypeMode = EFollowBaseTypeMode.None;
+		public EFollowBaseTypeMode FollowOtherTypesMode =	EFollowBaseTypeMode.None;
+		public List<string> ExcludeTypes = new List<string>();
+		public ETypeMatching TypeMatching = ETypeMatching.Exact;
 		public InheritanceDiagramConfiguration() {
 		}
 		public InheritanceDiagramConfiguration(string baseType, string outputName, bool templateArgsInInheritance, EMemberType memberTypes, Accessibilities accessibilities, bool staticMembers) : base(outputName, memberTypes, accessibilities, staticMembers) {

@@ -30,7 +30,8 @@ namespace CSharpToPlantUml {
 		private readonly bool mGenerateInheritanceRelations;
 		private readonly bool mShowTemplateArgsInInheritanceRelations = true;
 		private readonly bool mExcludeSystemObjectFromInheritance = true;
-		private readonly EFollowBaseTypeMode mFollowBaseTypeMode = EFollowBaseTypeMode.None;
+		private readonly EFollowBaseTypeMode mFollowAnchorTypeMode = EFollowBaseTypeMode.None;
+		private readonly EFollowBaseTypeMode mFollowOtherTypesMode = EFollowBaseTypeMode.None;
 		private readonly bool mEnableNameSpace = true;
 		private readonly decimal mScale = 1.0m;
 		bool mRenderTypeLinks = false;
@@ -40,6 +41,7 @@ namespace CSharpToPlantUml {
 		string mRenderRegexForTypeReplacement = string.Empty;
 
 		private EDiagramDirection mDiagramDirection = EDiagramDirection.Default;
+		SimpleTypeMatcher? mExcludeTypeMatcher = null;
 		public ClassDiagramGenerator(TextWriter writer, NamedTypeVisitor namedTypeVisitor, ProjectConfiguration pConfig, DiagramConfiguration config)
 	: this(writer, namedTypeVisitor,
 	config.MemberTypes,
@@ -52,7 +54,11 @@ namespace CSharpToPlantUml {
 				mShowTemplateArgsInInheritanceRelations = config.TemplateArgsInInheritanceRelations;
 			if (config is InheritanceDiagramConfiguration inheritance) {
 				mExcludeSystemObjectFromInheritance = inheritance.ExcludeSystemObject;
-				mFollowBaseTypeMode = inheritance.FollowBaseTypeMode;
+				mFollowAnchorTypeMode = inheritance.FollowAnchorTypeMode;
+				mFollowOtherTypesMode = inheritance.FollowOtherTypesMode;
+				if (inheritance.ExcludeTypes.Count > 0) {
+					mExcludeTypeMatcher = new SimpleTypeMatcher(inheritance.TypeMatching, inheritance.ExcludeTypes);
+				}
 			}
 			mScale = config.Scale;
 			mRenderTypeLinks = pConfig.RenderTypeLinks;
@@ -83,7 +89,7 @@ namespace CSharpToPlantUml {
 		/// used for type hierarchy diagrams
 		/// </summary>
 		/// <param name="namedTypes"></param>
-		public void Generate(string anchortype, IReadOnlyDictionary<string, INamedTypeSymbol> namedTypes) {
+		public void Generate(string anchortype, IReadOnlyDictionary<string, INamedTypeSymbol> inputTypes) {
 			WriteLine("@startuml");
 			if (mDiagramDirection != EDiagramDirection.Default) {
 				WriteLine(mDiagramDirection == EDiagramDirection.TopToBottom ? "top to bottom direction" : "left to right direction");
@@ -94,90 +100,59 @@ namespace CSharpToPlantUml {
 			if (mScale != 1) {
 				WriteLine(string.Format(System.Globalization.CultureInfo.InvariantCulture, "scale {0}", mScale));
 			}
-			if (mGenerateInheritanceRelations) {
-				Dictionary<string, INamedTypeSymbol> additionalTypes = new Dictionary<string, INamedTypeSymbol>();
-				foreach (var key in namedTypes.Keys) {
-					foreach (var baseType in mNamedTypeVisitor.GetBaseTypes(key)) {
-						if (baseType.Value.SpecialType == SpecialType.System_Object && mExcludeSystemObjectFromInheritance) continue;
-						if (!namedTypes.ContainsKey(baseType.Key) && !additionalTypes.ContainsKey(baseType.Key)) {
-							additionalTypes.Add(baseType.Key, baseType.Value);
-						}
-					}
-				}
-				Dictionary<string, INamedTypeSymbol> additionalTypesExpanded = null;
-				if (mFollowBaseTypeMode == EFollowBaseTypeMode.AllTypes) {
-					Dictionary<string, INamedTypeSymbol> prevTypes = additionalTypes;
-					while (true) {
-						Dictionary<string, INamedTypeSymbol> additionalTypes2 = new Dictionary<string, INamedTypeSymbol>();
-						foreach (var key in prevTypes.Keys) {
-							foreach (var baseType in mNamedTypeVisitor.GetBaseTypes(key)) {
-								if (baseType.Value.SpecialType == SpecialType.System_Object && mExcludeSystemObjectFromInheritance) continue;
-								if (!namedTypes.ContainsKey(baseType.Key)
-								&& !additionalTypes.ContainsKey(baseType.Key)
-								&& !additionalTypes2.ContainsKey(baseType.Key)
-								) {
-									additionalTypes2.Add(baseType.Key, baseType.Value);
-								}
-							}
-						}
-						if (additionalTypes2.Count == 0) break;
-						else {
-							foreach (var baseType in additionalTypes2) {
-								additionalTypes.Add(baseType.Key, baseType.Value);
-							}
-							prevTypes = additionalTypes2;
-						}
-					}
-					additionalTypesExpanded = additionalTypes;
-					additionalTypes = null;
-				} else if (mFollowBaseTypeMode == EFollowBaseTypeMode.AnchorType
-					&& namedTypes.TryGetValue(anchortype, out var anchorSymbol)) {
-					additionalTypesExpanded = new Dictionary<string, INamedTypeSymbol>();
-					Dictionary<string, INamedTypeSymbol> prevTypes = new Dictionary<string, INamedTypeSymbol>();
-					prevTypes.Add(anchortype, anchorSymbol);
-					while (true) {
-						Dictionary<string, INamedTypeSymbol> additionalTypes2 = new Dictionary<string, INamedTypeSymbol>();
-						foreach (var key in prevTypes.Keys) {
-							foreach (var baseType in mNamedTypeVisitor.GetBaseTypes(key)) {
-								if (baseType.Value.SpecialType == SpecialType.System_Object && mExcludeSystemObjectFromInheritance) continue;
-								if (!namedTypes.ContainsKey(baseType.Key)
-								&& !additionalTypesExpanded.ContainsKey(baseType.Key)
-								&& !additionalTypes2.ContainsKey(baseType.Key)
-								) {
-									additionalTypes2.Add(baseType.Key, baseType.Value);
-								}
-							}
-						}
-						if (additionalTypes2.Count == 0) break;
-						else {
-							foreach (var baseType in additionalTypes2) {
-								additionalTypesExpanded.Add(baseType.Key, baseType.Value);
-							}
-							prevTypes = additionalTypes2;
-						}
-					}
-					foreach (var key in additionalTypesExpanded.Keys) {
-						additionalTypes.Remove(key);
-					}
-				}
-				if (additionalTypesExpanded != null) {
-					foreach (var item in additionalTypesExpanded) {
-						VisitNamedType(item.Key, item.Value, ERelationMode.Show);
-					}
-				}
-				if (additionalTypes != null) {
-					HashSet<string> checkSet = new HashSet<string>();
-					foreach (var type in namedTypes.Keys) { checkSet.Add(type); }
-					foreach (var type in additionalTypes.Keys) { checkSet.Add(type); }
-					if (additionalTypesExpanded != null)
-						foreach (var type in additionalTypesExpanded.Keys) { checkSet.Add(type); }
-					foreach (var item in additionalTypes) {
-						VisitNamedType(item.Key, item.Value, ERelationMode.Check, checkSet);
-					}
+			Dictionary<string, INamedTypeSymbol> outputTypes = new Dictionary<string, INamedTypeSymbol>();
+			foreach (var kv in inputTypes) {
+				if (mExcludeTypeMatcher == null || !mExcludeTypeMatcher.Match(kv.Key)) {
+					outputTypes.Add(kv.Key, kv.Value);
 				}
 			}
-			foreach (var item in namedTypes) {
-				VisitNamedType(item.Key, item.Value, ERelationMode.Show);
+			if (mGenerateInheritanceRelations) {
+				for (int i = 0; i < 2; i++) {
+					EFollowBaseTypeMode followMode = i == 0 ? mFollowAnchorTypeMode : mFollowOtherTypesMode;
+					if (followMode == EFollowBaseTypeMode.None) continue;
+					Dictionary<string, INamedTypeSymbol> prevTypes = new Dictionary<string, INamedTypeSymbol>(); ;
+					if (i == 0) {
+						if (inputTypes.TryGetValue(anchortype, out var anchor) && anchor != null)
+							prevTypes.Add(anchortype, anchor);
+					} else {
+						foreach (var kv in inputTypes) {
+							if (kv.Key != anchortype) prevTypes.Add(kv.Key, kv.Value);
+						}
+					}
+					int recursionDepth = 0;
+					while (true) {
+						recursionDepth++;
+						if (followMode == EFollowBaseTypeMode.Parent && recursionDepth > 1) break;
+						Dictionary<string, INamedTypeSymbol> additionalTypes = new Dictionary<string, INamedTypeSymbol>();
+						foreach (var key in prevTypes.Keys) {
+							foreach (var baseType in mNamedTypeVisitor.GetBaseTypes(key)) {
+								if (baseType.Value.SpecialType == SpecialType.System_Object && mExcludeSystemObjectFromInheritance) continue;
+								if(mExcludeTypeMatcher != null && mExcludeTypeMatcher.Match(baseType.Key)) continue;
+								if (!outputTypes.ContainsKey(baseType.Key) && !additionalTypes.ContainsKey(baseType.Key)) {
+									additionalTypes.Add(baseType.Key, baseType.Value);
+								}
+							}
+						}
+						if (additionalTypes.Count == 0) break;
+						else {
+							foreach (var baseType in additionalTypes) {
+								outputTypes.Add(baseType.Key, baseType.Value);
+							}
+							prevTypes = additionalTypes;
+						}
+					}
+				}
+				HashSet<string> checkSet = new HashSet<string>();
+				foreach (var type in outputTypes.Keys) {
+					checkSet.Add(type);
+				}
+				foreach (var item in outputTypes) {
+					VisitNamedType(item.Key, item.Value, ERelationMode.Check, checkSet);
+				}
+			} else {
+				foreach (var item in outputTypes) {
+					VisitNamedType(item.Key, item.Value, ERelationMode.Skip);
+				}
 			}
 			WriteLine("@enduml");
 		}

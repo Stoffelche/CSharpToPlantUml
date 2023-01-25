@@ -8,15 +8,13 @@ namespace CSharpToPlantUml {
 	[Flags]
 	public enum Accessibilities {
 		None = 0x0000,
-		Private = 0x0001,
-		Protected = 0x0002,
-		Internal = 0x0004,
-		ProtectedInternal = 0x0008,
-		Public = 0x0010,
-		Explicit = 0x0020, 
-		PublicOrInternal = Public | Internal,
-		All = Private | Protected | Internal | ProtectedInternal | Public | Explicit,
-		PublicOrExplicit = Public | Explicit
+		Private = 1,
+		Protected = 1 << 1,
+		Internal = 1 << 2,
+		ProtectedInternal = 1 << 4,
+		Public =  1 << 5,
+		Explicit = 1 << 6, 
+		All = 0b1111111,
 	}
 
 }
