@@ -1,5 +1,5 @@
 # CSharpToPlantUml
-Generates inheritance diagrams from C# projects.<br>
+Generates plantuml inheritance diagrams from C# projects.<br>
 This projects works with Compilation generated with Roslyn from C# projects or solutions.<br>
 Diagrams are generated from a base type, by including all descendants (recursive inheriting types) in one plantuml diagram.
 The code generated for planutuml was borrowed from https://github.com/pierre3/PlantUmlClassDiagramGenerator project.
