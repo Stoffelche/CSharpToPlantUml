@@ -19,9 +19,9 @@ internal class Program {
 
 		////	generate config file first time
 
-		//	using (StreamWriter writer = new StreamWriter(@"c:\temp\configOut.xml", false)) {
-		//		serializer.Serialize(writer, CreateConfigFromCode());
-		//	}
+		using (StreamWriter writer = new StreamWriter(@"c:\temp\configOut.xml", false)) {
+			serializer.Serialize(writer, CreateConfigFromCode());
+		}
 		if (config != null) {
 			new UmlProject(config).Run();
 		} else Console.WriteLine("no configuration obtained");
@@ -31,6 +31,7 @@ internal class Program {
 		// programConfiguration.Solution = @"somesolution.sln";  // optional to go thru solution
 		config.AddProjects(@"Proj1.csproj"); // when going with solution, just use the name without extension
 		config.AddProjects(@"Proj2.csproj");
+		config.MetaData["Groups"] = new MetaDataDict() + ("GroupA", "Group A Title") + ("GroupB", "Group B Title");
 		var diagram1 = new InheritanceDiagramConfiguration(
 				"SomeNamespace.SomeClassOrInterface",
 				"SomeOutputFile", // extension .puml will be added
@@ -41,6 +42,8 @@ internal class Program {
 			);
 		diagram1.FollowOtherTypesMode = EFollowBaseTypeMode.Parent;
 		diagram1.FollowAnchorTypeMode = EFollowBaseTypeMode.Recursive;
+		diagram1.MetaData["Group"] = "GroupA";
+		diagram1.MetaData["Position"] = "1";
 		config.AddDiagrams(diagram1);
 		config.Options.DumpNamedTypeFileName = @"c:\namedtypes.lst";
 		return config;

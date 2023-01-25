@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Text;
@@ -13,11 +14,13 @@ public enum EDiagramDirection { Default, LeftToRight, TopToBottom }
 
 	public abstract class DiagramConfiguration {
 		public string OutputName;
+		public string Title;
 		public EMemberType MemberTypes;
 		public Accessibilities Accessibilities;
 		public bool StaticMembers;
 		public EDiagramDirection Direction = EDiagramDirection.Default;
 		public bool EnableNameSpace = true;
+		public MetaDataDict MetaData = new MetaDataDict ();
 		public decimal Scale = 1;
 		protected DiagramConfiguration() {
 		}

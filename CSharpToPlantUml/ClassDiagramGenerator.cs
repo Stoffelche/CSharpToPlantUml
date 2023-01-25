@@ -21,6 +21,7 @@ namespace CSharpToPlantUml {
 				};
 
 		private readonly TextWriter mWriter;
+		private string mTitle;
 		private readonly string mIndent = "  ";
 		private int mNestingDepth = 0;
 		private readonly Accessibilities mMemberAccessibilities;
@@ -39,7 +40,6 @@ namespace CSharpToPlantUml {
 		string mRenderReplaceChars = "-";
 		string mRenderRegexForTypes = string.Empty;
 		string mRenderRegexForTypeReplacement = string.Empty;
-
 		private EDiagramDirection mDiagramDirection = EDiagramDirection.Default;
 		SimpleTypeMatcher? mExcludeTypeMatcher = null;
 		public ClassDiagramGenerator(TextWriter writer, NamedTypeVisitor namedTypeVisitor, ProjectConfiguration pConfig, DiagramConfiguration config)
@@ -50,6 +50,7 @@ namespace CSharpToPlantUml {
 	config.InheritanceRelations) {
 			mEnableNameSpace = config.EnableNameSpace;
 			mDiagramDirection = config.Direction;
+			mTitle = config.Title;
 			if (config.InheritanceRelations)
 				mShowTemplateArgsInInheritanceRelations = config.TemplateArgsInInheritanceRelations;
 			if (config is InheritanceDiagramConfiguration inheritance) {
@@ -91,6 +92,9 @@ namespace CSharpToPlantUml {
 		/// <param name="namedTypes"></param>
 		public void Generate(string anchortype, IReadOnlyDictionary<string, INamedTypeSymbol> inputTypes) {
 			WriteLine("@startuml");
+			if (!string.IsNullOrEmpty(mTitle)) {
+				WriteLine(string.Format("title {0}", mTitle));
+			}
 			if (mDiagramDirection != EDiagramDirection.Default) {
 				WriteLine(mDiagramDirection == EDiagramDirection.TopToBottom ? "top to bottom direction" : "left to right direction");
 			}
@@ -127,7 +131,7 @@ namespace CSharpToPlantUml {
 						foreach (var key in prevTypes.Keys) {
 							foreach (var baseType in mNamedTypeVisitor.GetBaseTypes(key)) {
 								if (baseType.Value.SpecialType == SpecialType.System_Object && mExcludeSystemObjectFromInheritance) continue;
-								if(mExcludeTypeMatcher != null && mExcludeTypeMatcher.Match(baseType.Key)) continue;
+								if (mExcludeTypeMatcher != null && mExcludeTypeMatcher.Match(baseType.Key)) continue;
 								if (!outputTypes.ContainsKey(baseType.Key) && !additionalTypes.ContainsKey(baseType.Key)) {
 									additionalTypes.Add(baseType.Key, baseType.Value);
 								}

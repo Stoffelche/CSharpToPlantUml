@@ -19,6 +19,7 @@ namespace CSharpToPlantUml {
 		public string RenderRegexForTypes = string.Empty;
 		public string RenderRegexForTypeReplacement = string.Empty;
 		public List<string> CSharpProjects = new List<string>();
+		public MetaDataDict MetaData = new MetaDataDict();
 		public List<DiagramConfiguration> DiagramConfigurations = new List<DiagramConfiguration>();
 		public bool UseSolution { get { return !string.IsNullOrEmpty(Solution); } }
 		public UmlProjectOptions Options = new UmlProjectOptions();
