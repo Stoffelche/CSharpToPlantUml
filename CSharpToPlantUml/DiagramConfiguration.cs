@@ -20,6 +20,9 @@ public enum EDiagramDirection { Default, LeftToRight, TopToBottom }
 		public bool StaticMembers;
 		public EDiagramDirection Direction = EDiagramDirection.Default;
 		public bool EnableNameSpace = true;
+		public ETypeMatching TypeMatching = ETypeMatching.Exact;  // for included and excluded types
+		public List<string> IncludeTypes = new List<string>();
+
 		public MetaDataDict MetaData = new MetaDataDict ();
 		public decimal Scale = 1;
 		protected DiagramConfiguration() {
@@ -41,7 +44,6 @@ public enum EDiagramDirection { Default, LeftToRight, TopToBottom }
 		public EFollowBaseTypeMode FollowAnchorTypeMode = EFollowBaseTypeMode.None;
 		public EFollowBaseTypeMode FollowOtherTypesMode =	EFollowBaseTypeMode.None;
 		public List<string> ExcludeTypes = new List<string>();
-		public ETypeMatching TypeMatching = ETypeMatching.Exact;
 		public InheritanceDiagramConfiguration() {
 		}
 		public InheritanceDiagramConfiguration(string baseType, string outputName, bool templateArgsInInheritance, EMemberType memberTypes, Accessibilities accessibilities, bool staticMembers) : base(outputName, memberTypes, accessibilities, staticMembers) {

@@ -42,6 +42,7 @@ namespace CSharpToPlantUml {
 		string mRenderRegexForTypeReplacement = string.Empty;
 		private EDiagramDirection mDiagramDirection = EDiagramDirection.Default;
 		SimpleTypeMatcher? mExcludeTypeMatcher = null;
+		SimpleTypeMatcher? mIncludeTypeMatcher = null;
 		public ClassDiagramGenerator(TextWriter writer, NamedTypeVisitor namedTypeVisitor, ProjectConfiguration pConfig, DiagramConfiguration config)
 	: this(writer, namedTypeVisitor,
 	config.MemberTypes,
@@ -53,11 +54,14 @@ namespace CSharpToPlantUml {
 			mTitle = config.Title;
 			if (config.InheritanceRelations)
 				mShowTemplateArgsInInheritanceRelations = config.TemplateArgsInInheritanceRelations;
+			if (config.IncludeTypes != null && config.IncludeTypes.Count > 0) {
+				mIncludeTypeMatcher = new SimpleTypeMatcher(config.TypeMatching, config.IncludeTypes);
+			}
 			if (config is InheritanceDiagramConfiguration inheritance) {
 				mExcludeSystemObjectFromInheritance = inheritance.ExcludeSystemObject;
 				mFollowAnchorTypeMode = inheritance.FollowAnchorTypeMode;
 				mFollowOtherTypesMode = inheritance.FollowOtherTypesMode;
-				if (inheritance.ExcludeTypes.Count > 0) {
+				if (inheritance.ExcludeTypes != null && inheritance.ExcludeTypes.Count > 0) {
 					mExcludeTypeMatcher = new SimpleTypeMatcher(inheritance.TypeMatching, inheritance.ExcludeTypes);
 				}
 			}
@@ -86,6 +90,11 @@ namespace CSharpToPlantUml {
 			var space = string.Concat(Enumerable.Repeat(mIndent, mNestingDepth));
 			mWriter.WriteLine(space + line);
 		}
+		bool IncludeType(string typeName, INamedTypeSymbol type) {
+			return (mExcludeTypeMatcher == null || !mExcludeTypeMatcher.Match(typeName))
+					&& (mIncludeTypeMatcher == null || mIncludeTypeMatcher.Match(typeName));
+
+		}
 		/// <summary>
 		/// used for type hierarchy diagrams
 		/// </summary>
@@ -106,7 +115,7 @@ namespace CSharpToPlantUml {
 			}
 			Dictionary<string, INamedTypeSymbol> outputTypes = new Dictionary<string, INamedTypeSymbol>();
 			foreach (var kv in inputTypes) {
-				if (mExcludeTypeMatcher == null || !mExcludeTypeMatcher.Match(kv.Key)) {
+				if (IncludeType(kv.Key, kv.Value)) {
 					outputTypes.Add(kv.Key, kv.Value);
 				}
 			}
@@ -131,7 +140,7 @@ namespace CSharpToPlantUml {
 						foreach (var key in prevTypes.Keys) {
 							foreach (var baseType in mNamedTypeVisitor.GetBaseTypes(key)) {
 								if (baseType.Value.SpecialType == SpecialType.System_Object && mExcludeSystemObjectFromInheritance) continue;
-								if (mExcludeTypeMatcher != null && mExcludeTypeMatcher.Match(baseType.Key)) continue;
+								if (!IncludeType(baseType.Key, baseType.Value)) continue;
 								if (!outputTypes.ContainsKey(baseType.Key) && !additionalTypes.ContainsKey(baseType.Key)) {
 									additionalTypes.Add(baseType.Key, baseType.Value);
 								}

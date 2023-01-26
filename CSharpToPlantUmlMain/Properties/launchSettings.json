@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "TestRoslynApproach": {
-      "commandName": "Project",
-      "commandLineArgs": "c:\\temp\\config.xml"
-    }
-  }
-}
