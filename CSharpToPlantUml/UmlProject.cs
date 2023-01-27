@@ -87,7 +87,7 @@ namespace CSharpToPlantUml {
 				try {
 					RenderRemote.RenderFile(Configuration.RenderUrl, path, Configuration.RenderFormat, Configuration.RenderFolder);
 				} catch (Exception ex) {
-					LogErr(string.Format("Unable to render {0}. Error is {}", path, ex.Message));
+					LogErr(string.Format("Unable to render {0}. Error is {1}", path, ex.Message));
 				}
 			}
 		}

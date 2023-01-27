@@ -12,6 +12,7 @@ using System.Xml.Serialization;
 namespace CSharpToPlantUml {
 	public class MetaDataDict : IXmlSerializable , IEnumerable<KeyValuePair<string, object>>{
 		Dictionary<string, object> mDict = new Dictionary<string, object>();
+		Dictionary<string, int> mPositionDict = new Dictionary<string, int>();
 		public XmlSchema? GetSchema() {
 			return null;
 		}
@@ -26,9 +27,21 @@ namespace CSharpToPlantUml {
 		public object this[string idx] {
 			get { if (mDict.TryGetValue(idx, out var value)) return value; else return null; }
 			set {
-				if (value is string || value is MetaDataDict) mDict[idx] = value;
-				else throw new ArgumentException("only string or MetaDataDict as type is allowed");
+				if (value is string || value is MetaDataDict) {
+					mDict[idx] = value;
+					if (!mPositionDict.ContainsKey(idx)) mPositionDict[idx] = mDict.Count-1;
+				} else throw new ArgumentException("only string or MetaDataDict as type is allowed");
 			}
+		}
+		public int PositionOf(string idx){
+			if (mPositionDict.TryGetValue(idx, out int pos)) return pos;
+			return -1;
+		}
+		public List<KeyValuePair<string, object>> OrderByPosition() {
+			var rv = new List<KeyValuePair<string, object>>();
+			rv.AddRange(mDict);
+			rv.Sort((a, b) => { return PositionOf(a.Key).CompareTo(PositionOf(b.Key)); });
+			return rv;
 		}
 		void DoRead(XmlReader reader, bool readNext) {
 			int depth = reader.Depth;
@@ -42,7 +55,7 @@ namespace CSharpToPlantUml {
 				}
 				string key = reader.Name;
 				object value = ReadValue(reader);
-				mDict[key] = value;
+				this[key] = value;
 			}
 		}
 		object ReadValue(XmlReader reader) {
@@ -53,7 +66,7 @@ namespace CSharpToPlantUml {
 			return dict;
 		}
 		public void WriteXml(XmlWriter writer) {
-			foreach (var item in mDict) {
+			foreach (var item in OrderByPosition()) {
 				writer.WriteStartElement(item.Key);
 				if (item.Value is string s) {
 					writer.WriteValue(s);

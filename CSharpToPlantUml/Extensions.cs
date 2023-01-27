@@ -14,29 +14,34 @@ namespace CSharpToPlantUml {
 			if (s == null || IsRootNamespace(s)) {
 				return string.Empty;
 			}
-
-			var sb = new StringBuilder(s.MetadataName);
+			//var sb = new StringBuilder(s.MetadataName); used 2 sb's to see where the results differ
+			var sb2 = new StringBuilder(s.MetadataName);
 			var last = s;
 
 			s = s.ContainingSymbol;
 
 			while (!IsRootNamespace(s)) {
-				if (s is ITypeSymbol && last is ITypeSymbol) {
-					sb.Insert(0, '+');
-				} else {
-					sb.Insert(0, '.');
-				}
-
-				sb.Insert(0, s.OriginalDefinition.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+//				if (s is ITypeSymbol && last is ITypeSymbol) {
+////					sb.Insert(0, '+');
+//					sb.Insert(0, '.');  // use . for nested classes as well, as + offends plantuml
+//				} else {
+//					sb.Insert(0, '.');
+//				}
+				sb2.Insert(0, '.');
+				//sb.Insert(0, s.OriginalDefinition.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
+				sb2.Insert(0, s.MetadataName);
 				//sb.Insert(0, s.MetadataName);
+				last = s;
 				s = s.ContainingSymbol;
 			}
 
-			return sb.ToString();
+			//var s1 = sb.ToString();
+			var s2 = sb2.ToString();
+			return s2;
 		}
 		public static string GetTypeParameterString(this INamedTypeSymbol symbol) {
-			if (!symbol.IsGenericType) {
-				return string.Empty;
+			if (!symbol.IsGenericType || symbol.TypeParameters.Length == 0) {
+				return string.Empty ;
 			}
 			StringBuilder sb = new StringBuilder("<");
 			for (int i = 0; i < symbol.TypeParameters.Length; i++) {
@@ -48,7 +53,7 @@ namespace CSharpToPlantUml {
 			return sb.ToString();
 		}
 		public static string GetTypeArgumentString(this INamedTypeSymbol symbol) {
-			if (!symbol.IsGenericType) {
+			if (!symbol.IsGenericType || symbol.TypeArguments.Length == 0) {
 				return string.Empty;
 			}
 			StringBuilder sb = new StringBuilder("<");
