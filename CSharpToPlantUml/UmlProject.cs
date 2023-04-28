@@ -16,7 +16,7 @@ namespace CSharpToPlantUml {
 		public ProjectConfiguration Configuration;
 		public WorkspaceSolution? Solution;
 		public List<WorkspaceProject> Projects = new List<WorkspaceProject>();
-		public NamedTypeVisitor NamedTypeVisitor;
+		NamedTypeVisitor? mNamedTypeVisitor = null;
 		public UmlProject(ProjectConfiguration configuration) {
 			Configuration = configuration;
 		}
@@ -61,42 +61,43 @@ namespace CSharpToPlantUml {
 				}
 			}
 		}
-		void InitNamedTypeVisitor() {
-			NamedTypeVisitor = new NamedTypeVisitor(false);
+		NamedTypeVisitor InitNamedTypeVisitor() {
+			NamedTypeVisitor visitor = new NamedTypeVisitor(false);
 			foreach (var project in Projects) {
-				NamedTypeVisitor.Visit(project);
+				visitor.Visit(project);
 			}
 			if (Configuration.Options.DumpNamedTypes) {
 				LogMessage("dumping named type list to " + Configuration.Options.DumpNamedTypeFileName);
 				using (StreamWriter writer = new StreamWriter(Configuration.Options.DumpNamedTypeFileName)) {
-					NamedTypeVisitor.DumpNamedTypes(writer); ;
+					visitor.DumpNamedTypes(writer); ;
 				}
 			}
+			return visitor;
+		}
+		public NamedTypeVisitor GetNamedTypeVisitor() {
+			if (mNamedTypeVisitor == null) mNamedTypeVisitor = InitNamedTypeVisitor();
+			return mNamedTypeVisitor;
 		}
 		void RunDiagram(DiagramConfiguration configuration) {
 			LogMessage("Creating diagram " + configuration.OutputName);
 			string path = Path.Combine(Configuration.OutputFolder, configuration.OutputName + ".puml");
 			using (StreamWriter writer = new StreamWriter(path, false)) {
-				ClassDiagramGenerator generator = new ClassDiagramGenerator(writer, NamedTypeVisitor, Configuration, configuration);
+				ClassDiagramGenerator generator = null;
 				if (configuration is InheritanceDiagramConfiguration inheritanceDiagramConfiguration) {
-					RunInheritanceDiagram(inheritanceDiagramConfiguration, generator);
+					generator = new InheritanceDiagramGenerator(this, writer, inheritanceDiagramConfiguration);
+				} else if(configuration is ClassRelationDiagramConfiguration relationDiagramConfiguration) {
+					generator = new ClassRelationDiagramGenerator(this, writer, relationDiagramConfiguration);
 				}
+				generator?.RunDiagram();
 			}
 			if (Configuration.RenderUml) {
 				LogMessage(string.Format("Rendering diagram {0} to format {1}", configuration.OutputName, Configuration.RenderFormat));
 				try {
 					RenderRemote.RenderFile(Configuration.RenderUrl, path, Configuration.RenderFormat, Configuration.RenderFolder);
 				} catch (Exception ex) {
-					LogErr(string.Format("Unable to render {0}. Error is {1}", path, ex.Message));
+					LogErr(string.Format("Unable to render {0}. Error is {1 }", path, ex.Message));
 				}
 			}
-		}
-		void RunInheritanceDiagram(InheritanceDiagramConfiguration configuration, ClassDiagramGenerator generator) {
-			var typeList = NamedTypeVisitor.GetRelatedTypes(configuration.BaseType);
-			if (typeList.Count == 0) {
-				LogWarn(string.Format("Type '{0}' not found", configuration.BaseType));
-			}
-			generator.Generate(configuration.BaseType, typeList);
 		}
 		// todo handle warnings
 		public void LogErr(string message) {

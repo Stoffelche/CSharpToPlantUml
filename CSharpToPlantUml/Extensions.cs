@@ -21,13 +21,13 @@ namespace CSharpToPlantUml {
 			s = s.ContainingSymbol;
 
 			while (!IsRootNamespace(s)) {
-//				if (s is ITypeSymbol && last is ITypeSymbol) {
-////					sb.Insert(0, '+');
-//					sb.Insert(0, '.');  // use . for nested classes as well, as + offends plantuml
-//				} else {
-//					sb.Insert(0, '.');
-//				}
-				sb2.Insert(0, '.');
+				if (s is ITypeSymbol && last is ITypeSymbol) {
+					sb2.Insert(0, '+');
+					//sb2.Insert(0, '.');  // use . for nested classes as well, as + offends plantuml
+				} else {
+					sb2.Insert(0, '.');
+				}
+	//			sb2.Insert(0, '.');
 				//sb.Insert(0, s.OriginalDefinition.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
 				sb2.Insert(0, s.MetadataName);
 				//sb.Insert(0, s.MetadataName);

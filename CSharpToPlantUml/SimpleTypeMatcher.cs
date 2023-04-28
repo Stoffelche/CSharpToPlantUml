@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CSharpToPlantUml {
-	internal class SimpleTypeMatcher {
+	public class SimpleTypeMatcher {
 		ETypeMatching mTypeMatching;
 		List<string> mPatterns;
 		public SimpleTypeMatcher(ETypeMatching typeMatching, List<string> mPatterns) {
